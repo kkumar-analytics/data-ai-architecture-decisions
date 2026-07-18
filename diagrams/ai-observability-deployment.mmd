@@ -34,7 +34,7 @@ flowchart TB
         direction LR
         LLM{{"Vertex AI · Gemini"}}:::shared
         Secrets[/"Secret Manager"/]:::shared
-        Docs[("Firestore<br/><small>locks · tickets · context</small>")]:::shared
+        Docs[("Firestore<br/><small>locks · ticket dedup</small>")]:::shared
     end
 
     Service --> LLM

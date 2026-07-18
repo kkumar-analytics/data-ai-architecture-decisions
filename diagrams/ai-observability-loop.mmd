@@ -3,6 +3,7 @@ flowchart LR
     classDef observe fill:#0e7490,stroke:#67e8f9,color:#ecfeff,stroke-width:2px
     classDef optimize fill:#0f766e,stroke:#5eead4,color:#f0fdfa,stroke-width:2px
     classDef change fill:#7c3aed,stroke:#c4b5fd,color:#f5f3ff,stroke-width:2px
+    classDef capture fill:#6d28d9,stroke:#ddd6fe,color:#f5f3ff,stroke-width:1.5px,stroke-dasharray: 4 3
     classDef gate fill:#b45309,stroke:#fbbf24,color:#fffbeb,stroke-width:2px,stroke-dasharray: 4 3
     classDef store fill:#334155,stroke:#94a3b8,color:#f1f5f9,stroke-width:1.5px
     classDef discard fill:#1e293b,stroke:#475569,color:#94a3b8,stroke-dasharray: 3 3
@@ -24,6 +25,7 @@ flowchart LR
     end
 
     Discard(["below threshold<br/>no ticket · no LLM call"]):::discard
+    Capture["Explicit knowledge capture<br/><small>agent-assisted · reviewed PR</small>"]:::capture
     KB[("Knowledge Cards<br/><small>git-versioned</small>")]:::store
 
     Telemetry --> Sweep --> Gate
@@ -31,4 +33,5 @@ flowchart LR
     Gate -.-> Discard
     Explain --> Ticket
     Explain -.->|"reads / informs"| KB
-    Ticket -.->|"captures RCA"| KB
+    Explain -.->|"durable finding"| Capture
+    Capture -->|"approved card"| KB

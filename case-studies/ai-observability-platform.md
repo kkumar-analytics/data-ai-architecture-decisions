@@ -14,7 +14,7 @@ A distributed SQL analytics platform serving enterprise-scale reporting workload
 - Root-cause knowledge lived in engineers' heads, with no durable, reviewable record.
 - The handoff from "we found something" to "there's a tracked change ticket" was manual and inconsistent.
 
-The mandate was to collapse **Observe → Optimize → Change** into one governed loop: cut mean-time-to-detect and mean-time-to-resolve, and turn every confirmed finding into both a durable change ticket and a reusable operator knowledge asset.
+The mandate was to collapse **Observe → Optimize → Change** into one governed loop: cut mean-time-to-detect and mean-time-to-resolve, turn qualified findings into durable change tickets, and make durable operational lessons easy to capture through a separate reviewed knowledge workflow.
 
 ## 2. System Context
 
@@ -53,6 +53,7 @@ flowchart LR
     classDef observe fill:#0e7490,stroke:#67e8f9,color:#ecfeff,stroke-width:2px
     classDef optimize fill:#0f766e,stroke:#5eead4,color:#f0fdfa,stroke-width:2px
     classDef change fill:#7c3aed,stroke:#c4b5fd,color:#f5f3ff,stroke-width:2px
+    classDef capture fill:#6d28d9,stroke:#ddd6fe,color:#f5f3ff,stroke-width:1.5px,stroke-dasharray: 4 3
     classDef gate fill:#b45309,stroke:#fbbf24,color:#fffbeb,stroke-width:2px,stroke-dasharray: 4 3
     classDef store fill:#334155,stroke:#94a3b8,color:#f1f5f9,stroke-width:1.5px
     classDef discard fill:#1e293b,stroke:#475569,color:#94a3b8,stroke-dasharray: 3 3
@@ -74,6 +75,7 @@ flowchart LR
     end
 
     Discard(["below threshold<br/>no ticket · no LLM call"]):::discard
+    Capture["Explicit knowledge capture<br/><small>agent-assisted · reviewed PR</small>"]:::capture
     KB[("Knowledge Cards<br/><small>git-versioned</small>")]:::store
 
     Telemetry --> Sweep --> Gate
@@ -81,7 +83,8 @@ flowchart LR
     Gate -.-> Discard
     Explain --> Ticket
     Explain -.->|"reads / informs"| KB
-    Ticket -.->|"captures RCA"| KB
+    Explain -.->|"durable finding"| Capture
+    Capture -->|"approved card"| KB
 ```
 
 ## 4. Container View
@@ -194,7 +197,7 @@ flowchart TB
         direction LR
         LLM{{"Vertex AI · Gemini"}}:::shared
         Secrets[/"Secret Manager"/]:::shared
-        Docs[("Firestore<br/><small>locks · tickets · context</small>")]:::shared
+        Docs[("Firestore<br/><small>locks · ticket dedup</small>")]:::shared
     end
 
     Service --> LLM
@@ -211,7 +214,7 @@ A managed multi-agent hosting product was evaluated for both flows and rejected 
 
 The same codebase runs both the interactive UI and the unattended scheduled monitor, replacing what was previously a fully manual loop: an engineer scanning Grafana/Elasticsearch by hand, copying SQL into SingleStore for a manual `EXPLAIN`, then writing up a Jira ticket from scratch with no dedup and no standard template. Now the monitor deterministically qualifies outliers at a recurring cadence with zero LLM cost for sweeps that don't clear the bar, and hands off to the LLM only for optimization write-ups and structured ticket filing on the candidates that do.
 
-Operator knowledge is captured as schema-validated, git-versioned Markdown cards — known issues, SingleStore concept references, metadata-view references, and Grafana dashboard references — with deterministic generated Markdown indexes for discovery. The source implementation defines schema and index-drift checks, but those CI workflow files are not present in this public architecture repository. There is no vector index and no runtime knowledge database in the selected design; the generated Markdown indexes remain derived artifacts of the cards — see [ADR-0004](../adr/0004-git-native-knowledge-over-vector-rag.md). Dry-run defaults make the platform safe to run locally with zero production credentials.
+Durable operational lessons are captured through explicit agent-assisted workflows that author schema-validated, git-versioned Markdown cards and open them for human review. Known issues, SingleStore concept references, metadata-view references, and Grafana dashboard references are exposed through deterministic generated Markdown indexes. The source implementation defines schema and index-drift checks, but those CI workflow files are not present in this public architecture repository. There is no vector index and no runtime knowledge database in the selected design; the generated Markdown indexes remain derived artifacts of the cards — see [ADR-0004](../adr/0004-git-native-knowledge-over-vector-rag.md). Dry-run defaults make the platform safe to run locally with zero production credentials.
 
 ## 8. Architectural Principles Behind This System
 
