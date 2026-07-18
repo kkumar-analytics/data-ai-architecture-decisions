@@ -1,0 +1,34 @@
+%%{init: {"theme": "base", "themeVariables": {"fontSize": "15px"}}}%%
+flowchart LR
+    classDef observe fill:#0e7490,stroke:#67e8f9,color:#ecfeff,stroke-width:2px
+    classDef optimize fill:#0f766e,stroke:#5eead4,color:#f0fdfa,stroke-width:2px
+    classDef change fill:#7c3aed,stroke:#c4b5fd,color:#f5f3ff,stroke-width:2px
+    classDef gate fill:#b45309,stroke:#fbbf24,color:#fffbeb,stroke-width:2px,stroke-dasharray: 4 3
+    classDef store fill:#334155,stroke:#94a3b8,color:#f1f5f9,stroke-width:1.5px
+    classDef discard fill:#1e293b,stroke:#475569,color:#94a3b8,stroke-dasharray: 3 3
+
+    Telemetry[("Elasticsearch<br/><small>query & plan telemetry</small>")]:::store
+
+    subgraph Observe["1 · OBSERVE"]
+        Sweep["Deterministic sweep<br/><small>9 core metrics · incidents & patterns</small>"]:::observe
+    end
+
+    Gate{"Deterministic<br/>Qualify & Prioritize Scorer"}:::gate
+
+    subgraph Optimize["2 · OPTIMIZE"]
+        Explain["Read-only plan diagnosis<br/><small>LLM-assisted rationale</small>"]:::optimize
+    end
+
+    subgraph Change["3 · CHANGE"]
+        Ticket["Structured change ticket<br/><small>LLM-synthesized · deduped</small>"]:::change
+    end
+
+    Discard(["below threshold<br/>no ticket · no LLM call"]):::discard
+    KB[("Knowledge Cards<br/><small>git-versioned</small>")]:::store
+
+    Telemetry --> Sweep --> Gate
+    Gate -->|"qualified candidate"| Explain
+    Gate -.-> Discard
+    Explain --> Ticket
+    Explain -.->|"reads / informs"| KB
+    Ticket -.->|"captures RCA"| KB

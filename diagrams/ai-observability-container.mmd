@@ -1,42 +1,55 @@
-C4Container
-title Container Diagram — AI Observability Platform
+%%{init: {"theme": "base", "themeVariables": {"fontSize": "15px"}}}%%
+flowchart TB
+    classDef actor fill:#1f2937,stroke:#94a3b8,color:#f8fafc,stroke-width:1.5px
+    classDef entry fill:#0e7490,stroke:#67e8f9,color:#ecfeff,stroke-width:2px
+    classDef agent fill:#0f766e,stroke:#5eead4,color:#f0fdfa,stroke-width:1.5px
+    classDef tool fill:#7c3aed,stroke:#c4b5fd,color:#f5f3ff,stroke-width:2px
+    classDef store fill:#334155,stroke:#94a3b8,color:#f1f5f9,stroke-width:1.5px
+    classDef external fill:#1e293b,stroke:#64748b,color:#e2e8f0,stroke-width:1.5px
 
-Person(engineer, "Platform Engineer")
+    Engineer(["Platform Engineer"]):::actor
+    Scheduler(("Cloud Scheduler")):::external
 
-System_Boundary(platform, "AI Observability Platform") {
-  Container(ui, "Interactive Investigation UI", "Cloud Run Service", "Chat-based entry point for human-driven investigation")
-  Container(router, "Specialist Agent Router", "Multi-agent framework", "Routes intents to Observe / Optimize / Change specialists")
-  Container(job, "Scheduled Detection Job", "Cloud Run Job", "Hourly deterministic sweep and severity scorer")
-  Container(obsAgent, "Observability Agent", "LLM agent", "Investigates telemetry, reads knowledge cards")
-  Container(optAgent, "Optimization Agent", "LLM agent", "Produces optimization rationale for qualified candidates")
-  Container(chgAgent, "Change Agent", "LLM agent", "Generates structured change tickets")
-  Container(mcp, "Tool-Contract Layer", "MCP servers", "Shared, scoped access to telemetry / metadata / dashboards / ticketing")
-  ContainerDb(lock, "Distributed Lock and Dedup Store", "Document store", "Prevents overlapping runs and duplicate tickets")
-  ContainerDb(kb, "Knowledge Cards", "Git-versioned Markdown", "Reviewable RCA and concept knowledge")
-}
+    subgraph Platform["AI Observability Platform"]
+        direction TB
 
-System_Ext(telemetry, "Telemetry Index")
-System_Ext(dbengine, "Distributed SQL Engine Metadata")
-System_Ext(dashboards, "Metrics Dashboards")
-System_Ext(ticketing, "Ticketing System")
-System_Ext(scheduler, "Scheduler")
+        UI["Interactive Investigation UI<br/><small>Cloud Run Service</small>"]:::entry
+        Job["Scheduled Detection Job<br/><small>Cloud Run Job · hourly sweep</small>"]:::entry
+        Router{"Specialist Agent Router<br/><small>LangChain</small>"}:::entry
 
-Rel(engineer, ui, "Uses")
-Rel(ui, router, "Routes request")
-Rel(scheduler, job, "Triggers hourly")
-Rel(job, mcp, "Reads telemetry and metadata via")
-Rel(job, lock, "Acquires lock, checks dedup key")
-Rel(router, obsAgent, "OBSERVE")
-Rel(router, optAgent, "OPTIMIZE")
-Rel(router, chgAgent, "CHANGE")
-Rel(obsAgent, mcp, "Calls")
-Rel(optAgent, mcp, "Calls")
-Rel(chgAgent, mcp, "Calls")
-Rel(obsAgent, kb, "Reads")
-Rel(chgAgent, lock, "Writes dedup lock")
-Rel(mcp, telemetry, "Queries")
-Rel(mcp, dbengine, "Queries", "read-only")
-Rel(mcp, dashboards, "Queries")
-Rel(mcp, ticketing, "Creates tickets")
+        ObsAgent["Observability Agent<br/><small>LLM agent</small>"]:::agent
+        OptAgent["Optimization Agent<br/><small>LLM agent</small>"]:::agent
+        ChgAgent["Change Agent<br/><small>LLM agent</small>"]:::agent
 
-UpdateLayoutConfig($c4ShapeInRow="4", $c4BoundaryInRow="1")
+        MCP["MCP Tool Servers<br/><small>FastMCP</small>"]:::tool
+
+        Lock[("Firestore<br/><small>locks & ticket dedup</small>")]:::store
+        KB[("Knowledge Cards<br/><small>git-versioned Markdown</small>")]:::store
+    end
+
+    Telemetry[("Elasticsearch")]:::external
+    DBEngine[("SingleStore<br/><small>metadata, read-only</small>")]:::external
+    Dashboards[("Grafana")]:::external
+    Ticketing[["Jira"]]:::external
+
+    Engineer --> UI
+    Scheduler -->|"triggers hourly"| Job
+
+    UI --> Router
+    Router -->|"OBSERVE"| ObsAgent
+    Router -->|"OPTIMIZE"| OptAgent
+    Router -->|"CHANGE"| ChgAgent
+
+    Job -->|"sweep"| MCP
+    Job -->|"lock"| Lock
+
+    ObsAgent --> MCP
+    OptAgent --> MCP
+    ChgAgent --> MCP
+    ObsAgent -.->|"reads"| KB
+    ChgAgent -.->|"dedup"| Lock
+
+    MCP --> Telemetry
+    MCP -->|"read-only"| DBEngine
+    MCP --> Dashboards
+    MCP -->|"creates tickets"| Ticketing

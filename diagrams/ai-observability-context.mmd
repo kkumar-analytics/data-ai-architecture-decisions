@@ -1,21 +1,22 @@
-C4Context
-title System Context — AI Observability Platform
+%%{init: {"theme": "base", "themeVariables": {"fontSize": "16px"}}}%%
+flowchart TB
+    classDef actor fill:#1f2937,stroke:#94a3b8,color:#f8fafc,stroke-width:1.5px
+    classDef platform fill:#0f766e,stroke:#5eead4,color:#f0fdfa,stroke-width:3px,font-weight:bold
+    classDef external fill:#1e293b,stroke:#64748b,color:#e2e8f0,stroke-width:1.5px
 
-Person(engineer, "Platform Engineer", "Investigates data-platform incidents interactively")
+    Engineer(["Platform Engineer"]):::actor
 
-System(platform, "AI Observability Platform", "Closed-loop Observe -> Optimize -> Change system")
+    Platform["AI Observability Platform<br/><small>Closed-loop Observe → Optimize → Change system</small>"]:::platform
 
-System_Ext(telemetry, "Telemetry Index", "Query and plan-cache metrics at query-fingerprint grain")
-System_Ext(dbengine, "Distributed SQL Engine", "Live cluster metadata: sessions, resource pools, plan cache")
-System_Ext(dashboards, "Metrics Dashboards", "Host and infrastructure signal corroboration")
-System_Ext(ticketing, "Ticketing System", "Change-management workflow")
-System_Ext(llm, "LLM Provider", "Generative reasoning for optimization rationale and ticket synthesis")
+    Telemetry[("Elasticsearch<br/><small>query & plan-cache metrics</small>")]:::external
+    DBEngine[("SingleStore<br/><small>live cluster metadata</small>")]:::external
+    Dashboards[("Grafana<br/><small>host & infra signals</small>")]:::external
+    Ticketing[["Jira<br/><small>change management</small>"]]:::external
+    LLM{{"Vertex AI · Gemini<br/><small>generative reasoning</small>"}}:::external
 
-Rel(engineer, platform, "Investigates via chat UI")
-Rel(platform, telemetry, "Reads query and plan telemetry")
-Rel(platform, dbengine, "Reads live metadata", "read-only")
-Rel(platform, dashboards, "Reads host and infra signals")
-Rel(platform, ticketing, "Files structured change tickets")
-Rel(platform, llm, "Requests optimization rationale and ticket synthesis")
-
-UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
+    Engineer -->|"investigates via chat UI"| Platform
+    Platform -->|"reads query & plan telemetry"| Telemetry
+    Platform -->|"reads live metadata · read-only"| DBEngine
+    Platform -->|"reads host / infra signals"| Dashboards
+    Platform -->|"files structured change tickets"| Ticketing
+    Platform -->|"requests optimization rationale"| LLM

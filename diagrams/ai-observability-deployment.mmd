@@ -1,0 +1,45 @@
+%%{init: {"theme": "base", "themeVariables": {"fontSize": "15px"}}}%%
+flowchart TB
+    classDef dev fill:#1e293b,stroke:#64748b,color:#e2e8f0,stroke-width:1.5px
+    classDef ci fill:#374151,stroke:#9ca3af,color:#f9fafb,stroke-width:1.5px
+    classDef planned fill:#1e293b,stroke:#475569,color:#94a3b8,stroke-width:1.5px,stroke-dasharray: 4 3
+    classDef svc fill:#0e7490,stroke:#67e8f9,color:#ecfeff,stroke-width:2px
+    classDef job fill:#b45309,stroke:#fbbf24,color:#fffbeb,stroke-width:2px
+    classDef shared fill:#334155,stroke:#94a3b8,color:#f1f5f9,stroke-width:1.5px
+    classDef actor fill:#1f2937,stroke:#94a3b8,color:#f8fafc,stroke-width:1.5px
+
+    Dev["Local Development<br/><small>shared codebase · dry-run by default</small>"]:::dev
+    CloudBuild["Cloud Build<br/><small>CI/CD · planned</small>"]:::planned
+
+    subgraph Registry["Artifact Registry"]
+        direction LR
+        ImgSvc["service image"]:::ci
+        ImgJob["job image"]:::ci
+    end
+    Dev -->|"push"| ImgSvc
+    Dev -->|"push"| ImgJob
+    CloudBuild -.->|"future push"| ImgSvc
+    CloudBuild -.->|"future push"| ImgJob
+
+    Engineer(["Platform Engineer"]):::actor
+    Sched(("Cloud Scheduler<br/><small>hourly</small>")):::actor
+
+    ImgSvc --> Service["Cloud Run Service<br/><small>interactive investigation UI<br/>scales to zero when idle</small>"]:::svc
+    ImgJob --> Job["Cloud Run Job<br/><small>scheduled detection sweep<br/>bounded runtime</small>"]:::job
+
+    Engineer -->|"HTTPS"| Service
+    Sched -->|"triggers"| Job
+
+    subgraph Shared["Shared Services"]
+        direction LR
+        LLM{{"Vertex AI · Gemini"}}:::shared
+        Secrets[/"Secret Manager"/]:::shared
+        Docs[("Firestore<br/><small>locks · tickets · context</small>")]:::shared
+    end
+
+    Service --> LLM
+    Job --> LLM
+    Service --> Secrets
+    Job --> Secrets
+    Job --> Docs
+    Service -.-> Docs

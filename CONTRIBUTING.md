@@ -21,8 +21,10 @@ This is a personal architecture-decisions portfolio, not an open-source project 
 
 ## Diagram Standard
 
-- Use the [C4 model](https://c4model.com/) — Context and Container levels are the default; add Component-level diagrams only where the internal structure of one container is itself the point of an ADR.
-- Diagrams are written in Mermaid's C4 syntax (`C4Context`, `C4Container`) so they render natively on GitHub and in most static-site generators without a build step.
+- Use the [C4 model](https://c4model.com/) levels — Context and Container are the default; add a Deployment diagram where infrastructure topology is itself part of the story, and Component-level diagrams only where the internal structure of one container is itself the point of an ADR.
+- Diagrams are written as styled Mermaid flowcharts (`flowchart`), not raw `C4Context`/`C4Container` syntax — the C4 boxes render too flat and text-heavy on GitHub. Use `classDef` to color-code actor / entry-point / agent / tool / storage / external-system node categories consistently across a case study's diagram set, and keep a small palette (5–6 classes) rather than one-off colors per node.
+- Case studies that center on a closed-loop or pipeline process (e.g. detect → diagnose → act) should also include a narrative flow diagram showing that loop end to end — this is usually the single most recruiter-legible diagram in the case study, so it earns its own diagram file.
+- Every diagram lives in `diagrams/` as its own `.mmd` file and gets embedded verbatim (same Mermaid source, no drift) in the case study's fenced code block.
 - Keep node/participant names in diagrams role-based (`Scheduled_Detection_Job`), matching the sanitization rules — never an internal service name.
 
 ## Review Pass Before Publishing
