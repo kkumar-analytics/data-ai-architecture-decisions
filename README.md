@@ -29,7 +29,7 @@ data-ai-architecture-decisions/
 
 | # | Decision | Project |
 | :--- | :--- | :--- |
-| [0001](adr/0001-deterministic-detection-over-llm-qualification.md) | Deterministic detection over LLM qualification | AI Observability Platform |
+| [0001](adr/0001-deterministic-detection-over-llm-qualification.md) | Deterministic qualification and prioritization before LLM analysis | AI Observability Platform |
 | [0002](adr/0002-cloud-run-service-and-job-over-gke.md) | Cloud Run Service and Job over GKE | AI Observability Platform |
 | [0003](adr/0003-mcp-tool-contracts-over-in-process-tools.md) | MCP tool contracts over in-process tools | AI Observability Platform |
 | [0004](adr/0004-git-native-knowledge-over-vector-rag.md) | Git-native knowledge over vector RAG | AI Observability Platform |

@@ -21,7 +21,7 @@ The team operating this system is five engineers, three of whom are GenAI specia
 
 ## Decision
 
-Run two independently deployable **Cloud Run** artifacts from one container image: a **Cloud Run Service** for interactive, chat-driven investigation, and a **Cloud Run Job** triggered hourly by a managed scheduler for deterministic detection. No Kubernetes cluster, no managed multi-agent hosting product.
+Run two independently deployable **Cloud Run** artifacts built from one shared codebase, packaged as two separate container images: a **Cloud Run Service** for interactive, chat-driven investigation, and a **Cloud Run Job** triggered hourly by a managed scheduler for deterministic detection. No Kubernetes cluster, no managed multi-agent hosting product.
 
 ## Alternatives Considered
 
@@ -44,4 +44,4 @@ Run two independently deployable **Cloud Run** artifacts from one container imag
 
 ## Operational Consequences
 
-On-call reasoning splits cleanly into two domains: interactive-service health and scheduled-job health, each with its own failure signatures. New capability generally means a new Cloud Run revision from the same shared image, not a new cluster manifest or Helm chart. Changing detection cadence is a scheduler configuration change, not a re-architecture. The team explicitly accepted "less infrastructure control" as the price of "no infrastructure team required."
+On-call reasoning splits cleanly into two domains: interactive-service health and scheduled-job health, each with its own failure signatures. New capability generally means a new Cloud Run revision built from the same shared codebase, not a new cluster manifest or Helm chart. Changing detection cadence is a scheduler configuration change, not a re-architecture. The team explicitly accepted "less infrastructure control" as the price of "no infrastructure team required."
