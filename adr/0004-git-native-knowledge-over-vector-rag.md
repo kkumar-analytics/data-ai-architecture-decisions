@@ -1,7 +1,7 @@
 # ADR-0004: Git-Native Knowledge Over Vector RAG
 
 **Status:** Accepted
-**Date:** 2025
+**Date:** 2026
 **Project:** AI Observability Platform
 **Deciders:** Platform Architecture Lead
 

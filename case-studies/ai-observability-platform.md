@@ -154,7 +154,7 @@ flowchart TB
 
 ## 6. Deployment Topology
 
-Interactive investigation runs as a **Cloud Run Service** (chat-style UI) that scales to zero when idle, not an always-on process. The hourly detection sweep runs as a **Cloud Run Job** invoked by **Cloud Scheduler**. Both are built from one shared codebase but packaged as two separate container images, so an image-only update to either surface preserves secrets, networking, and service-account bindings out of band. A **Firestore**-backed distributed lock (tuned to slightly exceed the job's expected runtime) and a content-hash dedup key prevent overlapping runs and duplicate tickets. CI/CD via **Cloud Build** is on the roadmap; today, both images are built and pushed straight from local development, which is a deliberate near-term trade-off, not an oversight — see the diagram below.
+Interactive investigation runs as a **Cloud Run Service** (chat-style UI) that scales to zero when idle, not an always-on process. The hourly detection sweep runs as a **Cloud Run Job** invoked by **Cloud Scheduler**. Both are built from one shared codebase but packaged as two separate container images, so an image-only update to either surface preserves secrets, networking, and service-account bindings out of band. A **Firestore**-backed distributed lock (tuned to slightly exceed the job's expected runtime) prevents overlapping runs, and ticket dedup is checked by exact-query and query-shape fingerprint — see [ADR-0001](../adr/0001-deterministic-detection-over-llm-qualification.md) for the full candidate model. CI/CD via **Cloud Build** is on the roadmap; today, both images are built and pushed straight from local development, which is a deliberate near-term trade-off, not an oversight — see the diagram below.
 
 ```mermaid
 %%{init: {"theme": "base", "themeVariables": {"fontSize": "15px"}}}%%
@@ -215,7 +215,7 @@ Operator knowledge is captured as git-versioned Markdown cards — known issues,
 ## 8. Architectural Principles Behind This System
 
 1. **Managed services where they remove operational ownership** — not by default, but when the workload doesn't justify the control they'd cost.
-2. **Deterministic controls on any path that pages a human or files a ticket.** Generative AI adds value in reasoning and synthesis, not in gating.
+2. **Deterministic controls on any path that autonomously files a ticket or otherwise creates engineering work.** Generative AI adds value in reasoning and synthesis, not in gating — the pipeline files tickets for a human to review and act on; it does not page anyone.
 3. **Explicit trust boundaries** between telemetry access, read-only diagnostics, and anything that writes a change.
 4. **Reviewable knowledge over opaque retrieval** wherever exact-match correctness matters more than fuzzy recall.
 

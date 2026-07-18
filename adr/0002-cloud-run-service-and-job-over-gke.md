@@ -1,7 +1,7 @@
 # ADR-0002: Cloud Run Service and Job Over GKE
 
 **Status:** Accepted
-**Date:** 2025
+**Date:** 2026
 **Project:** AI Observability Platform
 **Deciders:** Platform Architecture Lead
 

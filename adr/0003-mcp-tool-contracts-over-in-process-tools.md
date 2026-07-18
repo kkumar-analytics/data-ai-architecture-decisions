@@ -1,7 +1,7 @@
 # ADR-0003: MCP Tool Contracts Over In-Process Tools
 
 **Status:** Accepted
-**Date:** 2025
+**Date:** 2026
 **Project:** AI Observability Platform
 **Deciders:** Platform Architecture Lead
 

@@ -37,7 +37,7 @@ data-ai-architecture-decisions/
 ## Architectural Principles Behind These Decisions
 
 1. **Managed services where they remove operational ownership** — not by default, but when the workload doesn't justify the control they'd cost.
-2. **Deterministic controls on any path that pages a human or files a ticket.** Generative AI adds value in reasoning and synthesis, not in gating.
+2. **Deterministic controls on any path that autonomously files a ticket or otherwise creates engineering work.** Generative AI adds value in reasoning and synthesis, not in gating.
 3. **Explicit trust boundaries** between read access, diagnostics, and anything that writes a change.
 4. **Reviewable knowledge over opaque retrieval** wherever exact-match correctness matters more than fuzzy recall.
 
