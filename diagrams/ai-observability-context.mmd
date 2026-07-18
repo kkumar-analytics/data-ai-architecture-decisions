@@ -1,0 +1,21 @@
+C4Context
+title System Context — AI Observability Platform
+
+Person(engineer, "Platform Engineer", "Investigates data-platform incidents interactively")
+
+System(platform, "AI Observability Platform", "Closed-loop Observe -> Optimize -> Change system")
+
+System_Ext(telemetry, "Telemetry Index", "Query and plan-cache metrics at query-fingerprint grain")
+System_Ext(dbengine, "Distributed SQL Engine", "Live cluster metadata: sessions, resource pools, plan cache")
+System_Ext(dashboards, "Metrics Dashboards", "Host and infrastructure signal corroboration")
+System_Ext(ticketing, "Ticketing System", "Change-management workflow")
+System_Ext(llm, "LLM Provider", "Generative reasoning for optimization rationale and ticket synthesis")
+
+Rel(engineer, platform, "Investigates via chat UI")
+Rel(platform, telemetry, "Reads query and plan telemetry")
+Rel(platform, dbengine, "Reads live metadata", "read-only")
+Rel(platform, dashboards, "Reads host and infra signals")
+Rel(platform, ticketing, "Files structured change tickets")
+Rel(platform, llm, "Requests optimization rationale and ticket synthesis")
+
+UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")

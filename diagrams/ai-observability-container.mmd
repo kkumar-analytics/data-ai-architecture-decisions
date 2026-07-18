@@ -1,0 +1,42 @@
+C4Container
+title Container Diagram — AI Observability Platform
+
+Person(engineer, "Platform Engineer")
+
+System_Boundary(platform, "AI Observability Platform") {
+  Container(ui, "Interactive Investigation UI", "Cloud Run Service", "Chat-based entry point for human-driven investigation")
+  Container(router, "Specialist Agent Router", "Multi-agent framework", "Routes intents to Observe / Optimize / Change specialists")
+  Container(job, "Scheduled Detection Job", "Cloud Run Job", "Hourly deterministic sweep and severity scorer")
+  Container(obsAgent, "Observability Agent", "LLM agent", "Investigates telemetry, reads knowledge cards")
+  Container(optAgent, "Optimization Agent", "LLM agent", "Produces optimization rationale for qualified candidates")
+  Container(chgAgent, "Change Agent", "LLM agent", "Generates structured change tickets")
+  Container(mcp, "Tool-Contract Layer", "MCP servers", "Shared, scoped access to telemetry / metadata / dashboards / ticketing")
+  ContainerDb(lock, "Distributed Lock and Dedup Store", "Document store", "Prevents overlapping runs and duplicate tickets")
+  ContainerDb(kb, "Knowledge Cards", "Git-versioned Markdown", "Reviewable RCA and concept knowledge")
+}
+
+System_Ext(telemetry, "Telemetry Index")
+System_Ext(dbengine, "Distributed SQL Engine Metadata")
+System_Ext(dashboards, "Metrics Dashboards")
+System_Ext(ticketing, "Ticketing System")
+System_Ext(scheduler, "Scheduler")
+
+Rel(engineer, ui, "Uses")
+Rel(ui, router, "Routes request")
+Rel(scheduler, job, "Triggers hourly")
+Rel(job, mcp, "Reads telemetry and metadata via")
+Rel(job, lock, "Acquires lock, checks dedup key")
+Rel(router, obsAgent, "OBSERVE")
+Rel(router, optAgent, "OPTIMIZE")
+Rel(router, chgAgent, "CHANGE")
+Rel(obsAgent, mcp, "Calls")
+Rel(optAgent, mcp, "Calls")
+Rel(chgAgent, mcp, "Calls")
+Rel(obsAgent, kb, "Reads")
+Rel(chgAgent, lock, "Writes dedup lock")
+Rel(mcp, telemetry, "Queries")
+Rel(mcp, dbengine, "Queries", "read-only")
+Rel(mcp, dashboards, "Queries")
+Rel(mcp, ticketing, "Creates tickets")
+
+UpdateLayoutConfig($c4ShapeInRow="4", $c4BoundaryInRow="1")
