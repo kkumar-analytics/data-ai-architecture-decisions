@@ -1,10 +1,31 @@
 # Data & AI Architecture Decisions
 
-A public record of real architecture decisions from enterprise data and AI platform work — Google Cloud, distributed analytics, multi-agent systems, and data governance. Each entry is a genuine decision from production systems I've designed and led, not a hypothetical.
+Production-derived architecture decisions and case studies from enterprise data and AI platform work on Google Cloud. The emphasis is on workload shape, trust boundaries, failure modes, and the trade-offs behind systems that operate unattended.
 
 > **What this is:** ADRs and case studies, sanitized of anything company-identifying, kept honest about trade-offs and rejected alternatives. See [`docs/sanitization-guidelines.md`](docs/sanitization-guidelines.md) for exactly what was removed and why.
 >
 > **What this isn't:** No proprietary source code, no internal names, URLs, credentials, or production thresholds.
+
+## Start Here
+
+For a hiring-manager review, use this order:
+
+1. [AI Observability Platform Case Study](case-studies/ai-observability-platform.md) — the end-to-end production context and selected topology.
+2. [ADR-0001 — Deterministic Qualification and Prioritization Before LLM Analysis](adr/0001-deterministic-detection-over-llm-qualification.md) — the flagship decision and LLM trust boundary.
+3. [Architecture Diagrams](diagrams/) — system context, runtime topology, trust boundaries, deterministic detection, and knowledge lifecycle.
+
+```mermaid
+flowchart LR
+    Observe["Observe<br/>Telemetry and operational evidence"]
+    Gate{"Deterministic<br/>qualification"}
+    Optimize["Optimize<br/>Read-only diagnostics<br/>LLM-assisted reasoning"]
+    Change["Change<br/>Structured engineering work<br/>for human-reviewed remediation"]
+    Skip(["No qualifying evidence<br/>No LLM call or ticket"])
+
+    Observe --> Gate
+    Gate -->|qualified| Optimize --> Change
+    Gate -.->|not qualified| Skip
+```
 
 ## Repository Structure
 
@@ -12,10 +33,12 @@ A public record of real architecture decisions from enterprise data and AI platf
 data-ai-architecture-decisions/
 ├── adr/                  Architecture Decision Records, numbered sequentially across all projects
 ├── case-studies/         Full case study per project — context, stack, diagrams, decision index
-├── diagrams/             C4-model diagram sources (.mmd) referenced by case studies
+├── diagrams/             Mermaid architecture diagram sources (.mmd) referenced by case studies
 ├── templates/            Reusable ADR template
 └── docs/                 Process docs (sanitization rules, etc.)
 ```
+
+The Mermaid architecture diagrams cover system context, runtime topology, trust boundaries, deterministic detection, and knowledge lifecycle.
 
 ## Case Studies
 
@@ -23,16 +46,16 @@ data-ai-architecture-decisions/
 | :--- | :--- |
 | [AI Observability Platform](case-studies/ai-observability-platform.md) | A closed-loop Observe → Optimize → Change system unifying query telemetry, live cluster metadata, and infrastructure signals, with deterministic detection and LLM-assisted synthesis |
 
-*(Additional case studies — data quality platform, conversational AI copilot — will land here as they're written up.)*
-
 ## Architecture Decision Records
 
-| # | Decision | Project |
+ADR-0001 is the finished flagship record. The remaining ADRs preserve accepted decisions as initial records and are intentionally not presented at the same documentation depth.
+
+| # | Decision | Maturity |
 | :--- | :--- | :--- |
-| [0001](adr/0001-deterministic-detection-over-llm-qualification.md) | Deterministic qualification and prioritization before LLM analysis | AI Observability Platform |
-| [0002](adr/0002-cloud-run-service-and-job-over-gke.md) | Cloud Run Service and Job over GKE | AI Observability Platform |
-| [0003](adr/0003-mcp-tool-contracts-over-in-process-tools.md) | MCP tool contracts over in-process tools | AI Observability Platform |
-| [0004](adr/0004-git-native-knowledge-over-vector-rag.md) | Git-native knowledge over vector RAG | AI Observability Platform |
+| [0001](adr/0001-deterministic-detection-over-llm-qualification.md) | Deterministic qualification and prioritization before LLM analysis | **Flagship** |
+| [0002](adr/0002-cloud-run-service-and-job-over-gke.md) | Cloud Run Service and Job over GKE | Initial |
+| [0003](adr/0003-mcp-tool-contracts-over-in-process-tools.md) | MCP tool contracts over in-process tools | Initial |
+| [0004](adr/0004-git-native-knowledge-over-vector-rag.md) | Git-native knowledge over vector RAG | Initial |
 
 ## Architectural Principles Behind These Decisions
 

@@ -14,7 +14,7 @@ flowchart TB
         direction TB
 
         UI["Interactive Investigation UI<br/><small>Cloud Run Service</small>"]:::entry
-        Job["Scheduled Detection Job<br/><small>Cloud Run Job · hourly sweep</small>"]:::entry
+        Job["Scheduled Detection Job<br/><small>Cloud Run Job · recurring sweep</small>"]:::entry
         Router{"Specialist Agent Router<br/><small>LangChain</small>"}:::entry
 
         ObsAgent["Observability Agent<br/><small>LLM agent</small>"]:::agent
@@ -33,7 +33,7 @@ flowchart TB
     Ticketing[["Jira"]]:::external
 
     Engineer --> UI
-    Scheduler -->|"triggers hourly"| Job
+    Scheduler -->|"triggers on schedule"| Job
 
     UI --> Router
     Router -->|"OBSERVE"| ObsAgent

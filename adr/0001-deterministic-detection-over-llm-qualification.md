@@ -7,7 +7,7 @@
 
 ## Context
 
-The platform runs an hourly, fully unattended detection job with no human in the loop before it can generate engineering work. That job has to answer two questions correctly every run: which telemetry candidates are actually worth acting on, and — when several qualify at once — which ones get a ticket now versus which get deferred. Getting either answer wrong has an immediate, visible cost: a real degradation goes unticketed, or one noisy workspace floods the backlog and the team stops trusting the automation.
+The platform runs a scheduled, fully unattended detection job with no human in the loop before it can generate engineering work. That job has to answer two questions correctly every run: which telemetry candidates are actually worth acting on, and — when several qualify at once — which ones get a ticket now versus which get deferred. Getting either answer wrong has an immediate, visible cost: a real degradation goes unticketed, or one noisy workspace floods the backlog and the team stops trusting the automation.
 
 This is not a single ranking query. The system distinguishes two different failure shapes — an isolated acute spike versus a query shape that keeps quietly wasting capacity — and needs a data model that can tell "the same query, ticketed twice" apart from "a parametric variant of a query we already have open." Generative models are a natural fit for narrative triage of this kind of evidence, which is exactly why this ADR draws a hard line around where in the pipeline a model is allowed to participate.
 
@@ -20,7 +20,7 @@ This ADR covers the qualification, scoring, prioritization, and deduplication pi
 - Fully unattended execution — no human reviews a run before it can generate a ticket.
 - Repeatability — the same input telemetry must produce the same qualification outcome, run after run.
 - A hard ticket budget, both per-workspace and global, so one degraded workspace cannot consume the whole run's capacity.
-- Flat, predictable cost and latency at hourly cadence across every workspace.
+- Flat, predictable cost and latency at a recurring cadence across every workspace.
 - Auditability — every ticket must be traceable to a specific metric and threshold, not a model's judgment call.
 - Coverage of the case where a whole workspace degrades uniformly, which a purely relative signal is structurally blind to.
 
@@ -36,14 +36,14 @@ The pipeline tracks two candidate types and three identifiers, and the distincti
 
 ## Decision Pipeline
 
-1. **Scheduled trigger.** A managed scheduler invokes the job on a fixed hourly cadence, unattended.
-2. **Incident and recurring-pattern sweeps.** Per workspace, the job runs both tiers in parallel across the same set of core performance metrics (latency, CPU time, memory, disk spill, cache misses, logical reads, lock time, resource-queue time) — the incident tier at exact-query grain over a short window, the pattern tier at query-shape grain over a longer window with a minimum recurrence count.
+1. **Scheduled trigger.** A managed scheduler invokes the job on a fixed recurring cadence, unattended.
+2. **Incident and recurring-pattern sweeps.** Per workspace, the job runs both tiers in parallel across a shared set of core performance metrics — the incident tier at exact-query grain over a short window, the pattern tier at query-shape grain over a longer window with a minimum recurrence count.
 3. **Merge and deduplicate.** A candidate can surface in more than one sweep — a query that is both slow and CPU-heavy appears in both rankings — so rows are merged to one representative candidate regardless of how many metrics flagged it.
 4. **Normalize cumulative metrics per execution.** Metrics that accumulate across calls are converted to a per-call basis before qualification, so a query's cost is judged per execution rather than inflated purely by how many times it ran.
 5. **Apply absolute qualification floors.** Every candidate is checked against fixed per-metric floor thresholds. Any single floor breach qualifies the candidate for scoring — nothing reaches scoring by relative comparison alone.
 6. **Calculate deterministic severity.** Qualified candidates get a severity score combining magnitude (how far past floor), frequency (call volume), breadth (how many metrics it breached), and known plan-warning signals.
-7. **Enforce workspace fairness.** Within each workspace, only the highest-severity candidate advances by default, so one noisy workspace cannot crowd out the rest of the fleet.
-8. **Enforce a global ticket budget.** Across all workspaces, only a fixed number of candidates advance per run, ranked by severity.
+7. **Enforce workspace fairness.** A bounded workspace quota advances the highest-severity candidates, so one noisy workspace cannot crowd out the rest of the fleet.
+8. **Enforce a global ticket budget.** Across all workspaces, a bounded number of candidates advances per run, ranked by severity.
 9. **Skip candidates with an existing open ticket.** Each remaining candidate is checked against the durable ticket store by shape fingerprint (and exact-query fingerprint); an open match causes a skip and promotes the next-highest-severity candidate in that workspace.
 10. **Retrieve full SQL.** Telemetry may hold only a truncated preview; the pipeline fetches the full statement by fingerprint before handoff, so nothing downstream ever reasons from a preview.
 11. **Invoke LLM optimization.** Only here does a model enter. It receives the qualified candidate's structured context — fingerprints, workspace, flagged metric, full SQL — and calls read-only diagnostic tools to produce a rationale and recommendations.
@@ -89,10 +89,10 @@ The optimization agent's own safety controls — read-only access scoped to meta
 
 ## Alternatives Considered
 
-1. **LLM qualification, given the same absolute metrics.** The model could technically be handed the same floor thresholds and asked to qualify. Rejected: prompt or model changes can shift qualification behavior even with the underlying metrics held constant; a per-candidate model call at hourly cadence across every workspace turns a fixed-cost job into a variable-cost one; and a model's qualification calls are far harder to back-test and regression-test against historical telemetry than a formula is. Qualification has a much lower tolerance for nondeterminism than explanation does.
+1. **LLM qualification, given the same absolute metrics.** The model could technically be handed the same floor thresholds and asked to qualify. Rejected: prompt or model changes can shift qualification behavior even with the underlying metrics held constant; a per-candidate model call at a recurring cadence across every workspace turns a fixed-cost job into a variable-cost one; and a model's qualification calls are far harder to back-test and regression-test against historical telemetry than a formula is. Qualification has a much lower tolerance for nondeterminism than explanation does.
 2. **Relative statistical anomaly scoring, with no absolute floor.** Statistically clean, no hand-tuned thresholds to maintain. Rejected as the sole mechanism specifically because of the uniform-degradation blind spot: when every candidate in a workspace degrades together, a peer-relative or cross-sectional signal can conclude nothing is unusual, which is exactly the scenario where a ticket matters most.
 3. **Static thresholds with no severity scoring.** Simpler than the full pipeline. Rejected: without a severity score, many simultaneously-qualifying candidates can't be ranked or budgeted, which produces either arbitrary selection or unbounded ticket volume from a single noisy workspace.
-4. **Human-only review, no automation.** Rejected as the primary mechanism: it doesn't scale to hourly, cross-workspace coverage, and reproduces the manual-hunting cost the platform exists to remove. It remains available as the interactive investigation surface for ad hoc, human-directed exploration outside the scheduled pipeline.
+4. **Human-only review, no automation.** Rejected as the primary mechanism: it doesn't scale to recurring, cross-workspace coverage, and reproduces the manual-hunting cost the platform exists to remove. It remains available as the interactive investigation surface for ad hoc, human-directed exploration outside the scheduled pipeline.
 
 ## Trade-offs
 

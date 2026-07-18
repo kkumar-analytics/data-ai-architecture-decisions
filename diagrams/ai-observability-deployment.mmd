@@ -22,9 +22,9 @@ flowchart TB
     CloudBuild -.->|"future push"| ImgJob
 
     Engineer(["Platform Engineer"]):::actor
-    Sched(("Cloud Scheduler<br/><small>hourly</small>")):::actor
+    Sched(("Cloud Scheduler<br/><small>recurring cadence</small>")):::actor
 
-    ImgSvc --> Service["Cloud Run Service<br/><small>interactive investigation UI<br/>scales to zero when idle</small>"]:::svc
+    ImgSvc --> Service["Cloud Run Service<br/><small>interactive investigation UI<br/>scales with demand</small>"]:::svc
     ImgJob --> Job["Cloud Run Job<br/><small>scheduled detection sweep<br/>bounded runtime</small>"]:::job
 
     Engineer -->|"HTTPS"| Service
@@ -38,7 +38,7 @@ flowchart TB
     end
 
     Service --> LLM
-    Job --> LLM
+    Job -->|"after deterministic qualification"| LLM
     Service --> Secrets
     Job --> Secrets
     Job --> Docs

@@ -6,14 +6,14 @@ Rules applied when converting internal architecture work into public case studie
 
 | Category | Rule | Example |
 | :--- | :--- | :--- |
-| **Company / product names** | Never named. Replace with a role-based description of the domain. | ~~"impact.com's copilot"~~ → "an authenticated customer-facing copilot for an ad-tech/analytics platform" |
-| **Internal repo, service, or job names** | Replace with the generic role the thing plays. | ~~`copilotproxy`~~ → "the Cloud Run BFF" |
-| **URLs / endpoints** | Never included, even internal ones that "look" harmless. | ~~`https://internal.corp/api/...`~~ → omitted entirely |
-| **Index / table / dataset names** | Replace with what the index is *for*, not its literal name. | ~~`custom-data_platform-*`~~ → "a dedicated append-only telemetry index" |
+| **Company / product names** | Never named. Replace with a role-based description of the domain. | A client-specific copilot name → "an authenticated customer-facing copilot" |
+| **Internal repo, service, or job names** | Replace with the generic role the thing plays. | An internal proxy service name → "the Cloud Run BFF" |
+| **URLs / endpoints** | Never included, even internal ones that "look" harmless. | An internal API URL → omitted entirely |
+| **Index / table / dataset names** | Replace with what the index is *for*, not its literal name. | A production index pattern → "a dedicated append-only telemetry index" |
 | **Credentials, tokens, project IDs, account numbers** | Never included. Not even redacted-but-shaped placeholders that hint at format. | — |
-| **Ticket prefixes / issue-tracker project keys** | Replace with a generic reference. | ~~`GENA-4821`~~ → "a tracked change ticket" |
-| **Exact production thresholds / tuning constants** | Describe the *shape* of the constraint, not the number, unless the number itself is the architectural point being made. | ~~"a 59-minute lock"~~ → "a bounded lock tuned to slightly exceed the job's expected runtime" |
-| **Team / org names, headcount tied to a specific employer** | Generalize to a role description ("a five-person platform team") only if team size itself is load-bearing for the decision (e.g., justifying "no dedicated ops staff"). Otherwise omit. |
+| **Ticket prefixes / issue-tracker project keys** | Replace with a generic reference. | A project-key issue identifier → "a tracked change ticket" |
+| **Exact production thresholds / tuning constants** | Describe the *shape* of the constraint, not the value, unless the value itself is the architectural point being made. | A production lock duration → "a bounded lock tuned to slightly exceed the job's expected runtime" |
+| **Team / org names, headcount tied to a specific employer** | Generalize to a role description ("a small platform team") only if team shape itself is load-bearing for the decision (e.g., justifying "no dedicated ops staff"). Otherwise omit. |
 
 ## What Is Safe to Keep
 

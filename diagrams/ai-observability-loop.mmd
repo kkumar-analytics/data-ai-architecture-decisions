@@ -10,7 +10,7 @@ flowchart LR
     Telemetry[("Elasticsearch<br/><small>query & plan telemetry</small>")]:::store
 
     subgraph Observe["1 · OBSERVE"]
-        Sweep["Deterministic sweep<br/><small>9 core metrics · incidents & patterns</small>"]:::observe
+        Sweep["Deterministic sweep<br/><small>core metrics · incidents & patterns</small>"]:::observe
     end
 
     Gate{"Deterministic<br/>Qualify & Prioritize Scorer"}:::gate
@@ -20,7 +20,7 @@ flowchart LR
     end
 
     subgraph Change["3 · CHANGE"]
-        Ticket["Structured change ticket<br/><small>LLM-synthesized · deduped</small>"]:::change
+        Ticket["Structured change ticket<br/><small>deduped · human-reviewed remediation</small>"]:::change
     end
 
     Discard(["below threshold<br/>no ticket · no LLM call"]):::discard

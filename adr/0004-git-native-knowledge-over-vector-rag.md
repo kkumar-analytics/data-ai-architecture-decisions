@@ -1,6 +1,7 @@
 # ADR-0004: Git-Native Knowledge Over Vector RAG
 
 **Status:** Accepted
+**Documentation maturity:** Initial
 **Date:** 2026
 **Project:** AI Observability Platform
 **Deciders:** Platform Architecture Lead
@@ -17,7 +18,7 @@ An earlier iteration of this platform had a knowledge-serving layer: document lo
 
 ## Decision
 
-Treat the Markdown file itself as the knowledge base: structured front-matter plus prose, organized by category (known issues, platform concepts, metadata-view references, dashboard references), with a generated index for discoverability and a small set of "capture" workflows as the growth loop. No vector index. No compiled cache. No dedicated knowledge-base service.
+Treat the Markdown file itself as the knowledge base: schema-validated front matter plus prose, organized by category (known issues, platform concepts, metadata-view references, dashboard references), with deterministic generated Markdown indexes for discoverability and a small set of "capture" workflows as the growth loop. No vector index. No compiled cache. No runtime knowledge database or dedicated knowledge-base service.
 
 ## Alternatives Considered
 
@@ -28,7 +29,7 @@ Treat the Markdown file itself as the knowledge base: structured front-matter pl
 
 **Pros of the chosen route:**
 - Git is the review plane — knowledge changes go through the same pull-request scrutiny as code.
-- CI validates card schema and catches index drift before it reaches production.
+- The source implementation defines schema validation and deterministic index-drift checks; those CI workflow files are not included in this public architecture repository.
 - Scheduled scrapes can refresh generated reference stubs (e.g., metadata-view definitions) without overwriting hand-authored operator judgment.
 
 **Cons / risks of the chosen route:**

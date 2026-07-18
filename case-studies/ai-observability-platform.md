@@ -1,6 +1,7 @@
 # Case Study: AI Observability Platform (Observe → Optimize → Change)
 
-**Related decisions:** [ADR-0001](../adr/0001-deterministic-detection-over-llm-qualification.md) · [ADR-0002](../adr/0002-cloud-run-service-and-job-over-gke.md) · [ADR-0003](../adr/0003-mcp-tool-contracts-over-in-process-tools.md) · [ADR-0004](../adr/0004-git-native-knowledge-over-vector-rag.md)
+**Related decisions:** [ADR-0001 (flagship)](../adr/0001-deterministic-detection-over-llm-qualification.md) · [ADR-0002 (initial)](../adr/0002-cloud-run-service-and-job-over-gke.md) · [ADR-0003 (initial)](../adr/0003-mcp-tool-contracts-over-in-process-tools.md) · [ADR-0004 (initial)](../adr/0004-git-native-knowledge-over-vector-rag.md)
+
 **Diagram sources:** [`diagrams/ai-observability-context.mmd`](../diagrams/ai-observability-context.mmd) · [`diagrams/ai-observability-loop.mmd`](../diagrams/ai-observability-loop.mmd) · [`diagrams/ai-observability-container.mmd`](../diagrams/ai-observability-container.mmd) · [`diagrams/ai-observability-deployment.mmd`](../diagrams/ai-observability-deployment.mmd)
 
 ## 1. Problem and Business Context
@@ -59,7 +60,7 @@ flowchart LR
     Telemetry[("Elasticsearch<br/><small>query & plan telemetry</small>")]:::store
 
     subgraph Observe["1 · OBSERVE"]
-        Sweep["Deterministic sweep<br/><small>9 core metrics · incidents & patterns</small>"]:::observe
+        Sweep["Deterministic sweep<br/><small>core metrics · incidents & patterns</small>"]:::observe
     end
 
     Gate{"Deterministic<br/>Qualify & Prioritize Scorer"}:::gate
@@ -69,7 +70,7 @@ flowchart LR
     end
 
     subgraph Change["3 · CHANGE"]
-        Ticket["Structured change ticket<br/><small>LLM-synthesized · deduped</small>"]:::change
+        Ticket["Structured change ticket<br/><small>deduped · human-reviewed remediation</small>"]:::change
     end
 
     Discard(["below threshold<br/>no ticket · no LLM call"]):::discard
@@ -102,7 +103,7 @@ flowchart TB
         direction TB
 
         UI["Interactive Investigation UI<br/><small>Cloud Run Service</small>"]:::entry
-        Job["Scheduled Detection Job<br/><small>Cloud Run Job · hourly sweep</small>"]:::entry
+        Job["Scheduled Detection Job<br/><small>Cloud Run Job · recurring sweep</small>"]:::entry
         Router{"Specialist Agent Router<br/><small>LangChain</small>"}:::entry
 
         ObsAgent["Observability Agent<br/><small>LLM agent</small>"]:::agent
@@ -121,7 +122,7 @@ flowchart TB
     Ticketing[["Jira"]]:::external
 
     Engineer --> UI
-    Scheduler -->|"triggers hourly"| Job
+    Scheduler -->|"triggers on schedule"| Job
 
     UI --> Router
     Router -->|"OBSERVE"| ObsAgent
@@ -150,11 +151,11 @@ flowchart TB
 | **Ingestion / Transport** | Elasticsearch at query-fingerprint grain; Grafana panel queries; chat-based entry point (Cloud Run Service); Cloud Scheduler-triggered batch job (Cloud Run Job) | Hot-path telemetry already existed at the right grain; Grafana supplies host/pool corroboration Elasticsearch can't; human and scheduled triggers reuse one MCP tool surface instead of duplicating detection logic |
 | **Orchestration / Logic** | LangChain multi-agent framework (ReAct-style specialists) + intent router; MCP tool servers (FastMCP) via `langchain-mcp-adapters`; deterministic qualify-and-prioritize scorer | Narrow per-agent tool scopes avoid "god-agent" failure modes; the shared MCP layer gives IDE/CLI tooling parity with the hosted UI; the LLM (Vertex AI / Gemini) is deliberately excluded from the alerting critical path — see [ADR-0001](../adr/0001-deterministic-detection-over-llm-qualification.md) |
 | **Storage / Indexing** | Elasticsearch; read-only SingleStore metadata views; Firestore for distributed locks and ticket dedup; git-versioned Markdown knowledge cards | Separates hot telemetry, live cluster truth, durable change state, and operator knowledge — each gets the consistency model it actually needs |
-| **Observability / Compute** | Python runtime; Cloud Build CI/CD (in progress — local dev currently publishes both container images directly to Artifact Registry); Secret Manager for credentials; per-caller query hard-limits | Empirically tuned budgets stop runaway agent loops; dry-run-by-default and schema validation keep both deploys and the knowledge base honest even before CI/CD lands |
+| **Observability / Compute** | Python runtime; planned Cloud Build CI/CD; local publication of both container images to Artifact Registry; Secret Manager for credentials; bounded per-caller query controls | Empirically tuned bounds stop runaway agent loops; dry-run defaults and schema validation constrain local operation while delivery automation remains planned |
 
 ## 6. Deployment Topology
 
-Interactive investigation runs as a **Cloud Run Service** (chat-style UI) that scales to zero when idle, not an always-on process. The hourly detection sweep runs as a **Cloud Run Job** invoked by **Cloud Scheduler**. Both are built from one shared codebase but packaged as two separate container images, so an image-only update to either surface preserves secrets, networking, and service-account bindings out of band. A **Firestore**-backed distributed lock (tuned to slightly exceed the job's expected runtime) prevents overlapping runs, and ticket dedup is checked by exact-query and query-shape fingerprint — see [ADR-0001](../adr/0001-deterministic-detection-over-llm-qualification.md) for the full candidate model. CI/CD via **Cloud Build** is on the roadmap; today, both images are built and pushed straight from local development, which is a deliberate near-term trade-off, not an oversight — see the diagram below.
+Interactive investigation runs as a **Cloud Run Service** (chat-style UI) that scales with demand and can scale to zero when idle. The unattended detection sweep runs as a **Cloud Run Job** invoked on a recurring cadence by **Cloud Scheduler**. Both are built from one shared codebase but packaged as two separate container images, so an image-only update to either surface preserves secrets, networking, and service-account bindings out of band. A **Firestore**-backed distributed lock (tuned to slightly exceed the job's expected runtime) prevents overlapping runs, and ticket dedup is checked by exact-query and query-shape fingerprint — see [ADR-0001](../adr/0001-deterministic-detection-over-llm-qualification.md) for the full candidate model. CI/CD via **Cloud Build** is planned; today, both images are built and pushed straight from local development, which is a deliberate near-term trade-off, not an oversight — see the diagram below.
 
 ```mermaid
 %%{init: {"theme": "base", "themeVariables": {"fontSize": "15px"}}}%%
@@ -181,9 +182,9 @@ flowchart TB
     CloudBuild -.->|"future push"| ImgJob
 
     Engineer(["Platform Engineer"]):::actor
-    Sched(("Cloud Scheduler<br/><small>hourly</small>")):::actor
+    Sched(("Cloud Scheduler<br/><small>recurring cadence</small>")):::actor
 
-    ImgSvc --> Service["Cloud Run Service<br/><small>interactive investigation UI<br/>scales to zero when idle</small>"]:::svc
+    ImgSvc --> Service["Cloud Run Service<br/><small>interactive investigation UI<br/>scales with demand</small>"]:::svc
     ImgJob --> Job["Cloud Run Job<br/><small>scheduled detection sweep<br/>bounded runtime</small>"]:::job
 
     Engineer -->|"HTTPS"| Service
@@ -197,7 +198,7 @@ flowchart TB
     end
 
     Service --> LLM
-    Job --> LLM
+    Job -->|"after deterministic qualification"| LLM
     Service --> Secrets
     Job --> Secrets
     Job --> Docs
@@ -208,9 +209,9 @@ A managed multi-agent hosting product was evaluated for both flows and rejected 
 
 ## 7. Results in Practice
 
-The same codebase runs both the interactive UI and the unattended hourly monitor, replacing what was previously a fully manual loop: an engineer scanning Grafana/Elasticsearch by hand, copying SQL into SingleStore for a manual `EXPLAIN`, then writing up a Jira ticket from scratch with no dedup and no standard template. Now the monitor deterministically qualifies outliers every hour at zero LLM cost for sweeps that don't clear the bar, and hands off to the LLM only for optimization write-ups and structured ticket filing on the candidates that do.
+The same codebase runs both the interactive UI and the unattended scheduled monitor, replacing what was previously a fully manual loop: an engineer scanning Grafana/Elasticsearch by hand, copying SQL into SingleStore for a manual `EXPLAIN`, then writing up a Jira ticket from scratch with no dedup and no standard template. Now the monitor deterministically qualifies outliers at a recurring cadence with zero LLM cost for sweeps that don't clear the bar, and hands off to the LLM only for optimization write-ups and structured ticket filing on the candidates that do.
 
-Operator knowledge is captured as git-versioned Markdown cards — known issues, SingleStore concept references, metadata-view references, Grafana dashboard references — validated against a JSON Schema and compiled to a generated index by a GitHub Actions gate on every pull request that touches the knowledge base, so a card that drifts from the committed index fails CI rather than silently going stale. There is no vector index and no runtime knowledge-serving database; the generated index is a build artifact of the Markdown, not a compiled catalog agents query separately — see [ADR-0004](../adr/0004-git-native-knowledge-over-vector-rag.md). Dry-run defaults make the platform safe to run locally with zero production credentials.
+Operator knowledge is captured as schema-validated, git-versioned Markdown cards — known issues, SingleStore concept references, metadata-view references, and Grafana dashboard references — with deterministic generated Markdown indexes for discovery. The source implementation defines schema and index-drift checks, but those CI workflow files are not present in this public architecture repository. There is no vector index and no runtime knowledge database in the selected design; the generated Markdown indexes remain derived artifacts of the cards — see [ADR-0004](../adr/0004-git-native-knowledge-over-vector-rag.md). Dry-run defaults make the platform safe to run locally with zero production credentials.
 
 ## 8. Architectural Principles Behind This System
 
